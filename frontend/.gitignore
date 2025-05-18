@@ -1,0 +1,33 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files
+.env
+.env.*
+
+# Redis dump (jeśli dump.rdb jest plikiem od Redis)
+dump.rdb
+
+# IDE / edytory
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logi
+*.log
+
+# Build / dist (jeśli projekt generuje)
+dist/
+build/
+
+# Optional: ignore coverage reports
+coverage/
+
+# Optional: ignore test reports
+test-results/
