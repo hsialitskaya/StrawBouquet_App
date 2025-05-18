@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.51.0 # Upewnij się, że tag jest poprawny
+          args:
+            - "--config.file=/prometheus/prometheus.yml" # Wskaż ścieżkę do pliku konfiguracyjnego
+            - "--storage.tsdb.retention.time=30d"
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: prometheus-storage
+              mountPath: /prometheus
+            - name: config-volume # Mount ConfigMap
+              mountPath: /prometheus/prometheus.yml
+              subPath: prometheus.yml
+      volumes:
+        - name: prometheus-storage
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+        - name: config-volume # Definicja ConfigMap
+          configMap:
+            name: prometheus-config

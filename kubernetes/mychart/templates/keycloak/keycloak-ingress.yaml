@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "mychart.keycloakName" . }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  labels:
+    app: keycloak
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "{{ .Values.ingress.host }}"
+      http:
+        paths:
+          - path: {{ .Values.keycloak.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "mychart.keycloakName" . }}
+                port:
+                  number: {{ .Values.keycloak.service.port }}

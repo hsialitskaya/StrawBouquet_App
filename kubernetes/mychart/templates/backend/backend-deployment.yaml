@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mychart.backendName" . }}
+  labels:
+    app: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.backend.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          env:
+            - name: FLASK_ENV
+              value: {{ .Values.backend.flaskEnv | quote }}
+          resources: {{ toYaml .Values.backend.resources | nindent 12 }} 
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.containerPort }}
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.containerPort }}
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: uploads
+              mountPath: {{ .Values.backend.volumeMountPath }}
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ .Values.backend.pvcName }}
+      restartPolicy: Always

@@ -1,0 +1,5 @@
+keycloak_data/
+postgres_data/
+secrets/
+
+.DS_Store
