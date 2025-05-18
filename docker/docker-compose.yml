@@ -1,0 +1,157 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      # POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ../postgres_data:/var/lib/postgresql/data # Bind mount
+      - ./init-scripts:/docker-entrypoint-initdb.d # Mount folderu z plikami SQL
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+    secrets:
+      - db_password
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    user: "redis"
+    tmpfs:
+      - /data # Wolumen tmpfs do przechowywania cache w pamięci
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KC_ADMIN}
+      # KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KEYCLOAK_ADMIN_PASSWORD_FILE: /run/secrets/kc_admin_password
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HEALTH_ENABLED: true
+    volumes:
+      - ../keycloak_data:/opt/keycloak/data # Bind mount
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-network
+      - frontend-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    command:
+      - start-dev
+      - --import-realm
+    secrets:
+      - kc_admin_password
+
+  backend:
+    # build: ../backend
+    image: annasel/backend:latest
+    container_name: backend
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: redis://redis:6379/0
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_CLIENT_ID: ${KC_CLIENT_ID}
+      KEYCLOAK_REALM: ${KC_REALM}
+    volumes:
+      - ../backend:/app #Auto-aktualizacja kodu bez przebudowywania obrazu
+      - uploads:/app/uploads
+    ports:
+      - "5001:5001"
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    # build: ../frontend
+    image: annasel/frontend:latest
+    container_name: frontend
+    environment:
+      REACT_APP_BACKEND_URL: http://backend:5001
+    volumes:
+      - ../frontend:/app #Auto-aktualizacja kodu bez przebudowywania obrazu
+      - /app/node_modules # Zapobiega nadpisaniu node_modules z hosta
+    ports:
+      - "3001:3001"
+    networks:
+      - frontend-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+    stdin_open: true # Pozwala na interaktywną pracę (hot reload)
+    tty: true
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+
+volumes:
+  uploads:
+
+secrets:
+  db_password:
+    file: ../secrets/db_password
+  kc_admin_password:
+    file: ../secrets/kc_admin_password
+# docker buildx build --platform linux/amd64,linux/arm64 \
+#   -t annasel/backend:latest \
+#   --push ./backend
+
+# docker buildx build --platform linux/amd64,linux/arm64 \
+#   -t annasel/frontend:latest \
+#   --push ./frontend
+
+#docker-compose down -v && docker-compose up --build
