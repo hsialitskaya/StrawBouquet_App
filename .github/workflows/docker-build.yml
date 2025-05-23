@@ -26,7 +26,5 @@ jobs:
 
     - name: Budowanie i push obrazu backend
       run: |
-        docker build --no-cache ${{ secrets.DOCKER_USERNAME }}/myapp-backend:latest ./backend
         docker build --no-cache -t myapp-backend:latest ./backend
-
         docker push ${{ secrets.DOCKER_USERNAME }}/myapp-backend:latest
