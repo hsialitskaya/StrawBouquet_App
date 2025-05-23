@@ -6,7 +6,6 @@ services:
     container_name: postgres
     environment:
       POSTGRES_USER: ${DB_USER}
-      # POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: ${DB_NAME}
     volumes:
@@ -45,7 +44,6 @@ services:
     container_name: keycloak
     environment:
       KEYCLOAK_ADMIN: ${KC_ADMIN}
-      # KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
       KEYCLOAK_ADMIN_PASSWORD_FILE: /run/secrets/kc_admin_password
       KC_HOSTNAME: ${KC_HOSTNAME}
       KC_HEALTH_ENABLED: true
@@ -132,6 +130,8 @@ services:
     stdin_open: true # Pozwala na interaktywną pracę (hot reload)
     tty: true
 
+
+#docker network ls
 networks:
   backend-network:
     driver: bridge
@@ -154,4 +154,4 @@ secrets:
 #   -t annasel/frontend:latest \
 #   --push ./frontend
 
-#docker-compose down -v && docker-compose up --build
+# docker-compose down -v && docker-compose up --build
