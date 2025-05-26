@@ -22,7 +22,7 @@ kubectl apply -f redis/
 
 echo "Czekam na gotowość podów..."
 
-# Czekaj na gotowość podów backend i frontend (przykład)
+# Czekaj na gotowość podów backend i frontend
 sleep 30
 echo "Wszystkie deploymenty gotowe, uruchamiam port-forward..."
 
@@ -42,6 +42,9 @@ wait
 
 # Poprawność działania 
 
+#Grafana
+# prom-operator
+
 # Metrics Server
 # kubectl get deployment metrics-server -n kube-system
 
@@ -53,4 +56,3 @@ wait
 # helm install myapp ./mychart (LUB POKAZAC ZRZUT)
 # helm list
 # helm status myapp
-
