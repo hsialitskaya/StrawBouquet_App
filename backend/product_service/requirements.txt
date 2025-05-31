@@ -1,0 +1,9 @@
+flask
+flask_sqlalchemy
+flask_cors
+psycopg2-binary
+flask_limiter
+flask_bcrypt
+requests
+python-keycloak
+redis

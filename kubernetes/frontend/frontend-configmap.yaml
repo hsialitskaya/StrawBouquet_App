@@ -5,4 +5,5 @@ metadata:
   labels:
     app: frontend
 data:
-  REACT_APP_BACKEND_URL: "http://localhost:5001"
+  REACT_APP_PRODUCT_SERVICE_URL: "http://localhost:5001"
+  REACT_APP_CART_SERVICE_URL: "http://localhost:5002"

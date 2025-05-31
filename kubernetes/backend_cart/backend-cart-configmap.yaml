@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-cart-config
+  labels:
+    app: backend-cart
+data:
+  APP_PORT: "5002"
+  PRODUCT_SERVICE_URL: "http://backend-produkt:5001"

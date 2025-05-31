@@ -1,14 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
-
-# Model użytkownika
-class Users(db.Model):
-    __tablename__ = 'users'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    email = db.Column(db.String(80), unique=True, nullable=False)
-    nickname = db.Column(db.String(50), unique=True, nullable=False)
-
+import sys
+import os
+from db import db
 
 # Model buketów
 class Bouquet(db.Model):
@@ -28,6 +20,16 @@ class Bouquet(db.Model):
 
     def __repr__(self):
         return f"<Bouquet {self.name}>"
+
+
+# Model użytkownika
+class Users(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(80), unique=True, nullable=False)
+    nickname = db.Column(db.String(50), unique=True, nullable=False)
+
 
 
 # Model koszyka

@@ -70,10 +70,10 @@ services:
     secrets:
       - kc_admin_password
 
-  backend:
-    # build: ../backend
-    image: annasel/backend:latest
-    container_name: backend
+  backend-produkt:
+    # build: ../backend/product_service
+    image: annasel/product_service:latest
+    container_name: backend-produkt
     environment:
       FLASK_ENV: development
       DATABASE_URL: ${DATABASE_URL}
@@ -82,7 +82,7 @@ services:
       KEYCLOAK_CLIENT_ID: ${KC_CLIENT_ID}
       KEYCLOAK_REALM: ${KC_REALM}
     volumes:
-      - ../backend:/app #Auto-aktualizacja kodu bez przebudowywania obrazu
+      - ../backend/product_service:/app/product_service #Auto-aktualizacja kodu bez przebudowywania obrazu
       - uploads:/app/uploads
     ports:
       - "5001:5001"
@@ -104,24 +104,55 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+
+  backend-cart:
+    # build: ../backend/cart_service
+    image: annasel/cart_service:latest
+    container_name: backend-cart
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      PRODUCT_SERVICE_URL: "http://backend-produkt:5001"
+      REDIS_URL: redis://redis:6379/0
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_CLIENT_ID: ${KC_CLIENT_ID}
+      KEYCLOAK_REALM: ${KC_REALM}
+    volumes:
+      - ../backend/cart_service:/app/cart_service #Auto-aktualizacja kodu bez przebudowywania obrazu
+    ports:
+      - "5002:5002"
+    networks:
+      - backend-network
+      - frontend-network
+    depends_on:
+      backend-produkt:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
   frontend:
     # build: ../frontend
     image: annasel/frontend:latest
     container_name: frontend
     environment:
-      REACT_APP_BACKEND_URL: http://backend:5001
+      REACT_APP_PRODUCT_SERVICE_URL: "http://backend-produkt:5001"
+      REACT_APP_CART_SERVICE_URL: "http://backend-cart:5002"
     volumes:
-      - ../frontend:/app #Auto-aktualizacja kodu bez przebudowywania obrazu
       - /app/node_modules # Zapobiega nadpisaniu node_modules z hosta
     ports:
-      - "3001:3001"
+      - "3001:80"
     networks:
       - frontend-network
     depends_on:
-      backend:
+      backend-cart:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -146,9 +177,14 @@ secrets:
     file: ../secrets/db_password
   kc_admin_password:
     file: ../secrets/kc_admin_password
+
 # docker buildx build --platform linux/amd64,linux/arm64 \
-#   -t annasel/backend:latest \
-#   --push ./backend
+#   -t annasel/product_service:latest \
+#   --push ./backend/product_service
+
+# docker buildx build --platform linux/amd64,linux/arm64 \
+#   -t annasel/cart_service:latest \
+#   --push ./backend/cart_service
 
 # docker buildx build --platform linux/amd64,linux/arm64 \
 #   -t annasel/frontend:latest \

@@ -5,7 +5,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_bcrypt import Bcrypt
 from db import db
-from db import Bouquet, Users, Cart
+from models import Bouquet
 import os
 from werkzeug.utils import secure_filename
 from keycloak import KeycloakOpenID
@@ -18,7 +18,7 @@ import requests
 app = Flask(__name__)
 CORS(
     app,
-    resources={r"/*": {"origins": "http://localhost:3001"}},
+    resources={r"/*": {"origins": ["http://localhost:3001", "http://backend-cart:5002"]}},
     supports_credentials=True,
     allow_headers=["Authorization", "Content-Type", "X-Requested-With"], 
     expose_headers=["Authorization"], 
@@ -111,38 +111,6 @@ def roles_required(*required_roles):
     return decorator
 
 
-# Rejestracja użytkownika
-@app.route('/register', methods=['POST'])
-@limiter.limit("5 per minute")
-def register():
-    data = request.json
-
-    # Walidacja danych wejściowych
-    required_fields = ['email', 'nickname']
-    if not data or any(field not in data for field in required_fields):
-        return jsonify({'message': 'Niekompletne dane rejestracji'}), 400
-
-    # Sprawdzenie, czy email już istnieje w bazie
-    if Users.query.filter_by(email=data['email']).first():
-        return jsonify({'message': 'Użytkownik o tym emailu już istnieje'}), 400
-    # Sprawdzenie, czy nickname już istnieje w bazie
-    if Users.query.filter_by(nickname=data['nickname']).first():
-        return jsonify({'message': 'Użytkownik o tym nicku już istnieje'}), 400
-
-    # Rejestracja użytkownika
-    new_user = Users(
-        email=data['email'],
-        nickname=data['nickname']
-        )
-
-    try:
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify({'message': 'Rejestracja zakończona sukcesem!', 'success': True}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'message': 'Wystąpił błąd podczas rejestracji.'}), 500
-
 
 @app.route('/bouquets', methods=['GET'])
 def get_bouquets():
@@ -170,6 +138,19 @@ def get_bouquets():
 
     return jsonify(bouquets_data), 200
 
+
+@app.route('/bouquet/<int:bouquet_id>', methods=['GET'])
+def get_single_bouquet(bouquet_id):
+    bouquet = Bouquet.query.get(bouquet_id)
+    if not bouquet:
+        return jsonify({"message": "Bukiet nie znaleziony"}), 404
+        
+    return jsonify({
+        "id": bouquet.id,
+        "name": bouquet.name,
+        "price": bouquet.price,
+        "image_url": url_for('uploaded_file', filename=bouquet.image_url.split('/')[-1])
+    }), 200
 
 # Funkcja do sprawdzania formatu pliku
 def allowed_file(filename):
@@ -309,137 +290,6 @@ def delete_bouquet(bouquet_id, userinfo):
         return jsonify({'message': 'Wewnętrzny błąd systemu'}), 500
 
 
-# Dodawanie bukietu do koszyka
-@app.route('/cart', methods=['POST'])
-@token_required
-def add_to_cart(userinfo):
-    try:
-        current_user_email = userinfo.get('email')
-
-        if not current_user_email:
-            return jsonify({'message': 'Email nie znaleziony w tokenie'}), 400
-
-        user = Users.query.filter_by(email=current_user_email).first()
-        if not user:
-            return jsonify({'message': 'Użytkownik nie znaleziony'}), 404
-
-        data = request.get_json()
-        bouquet_id = data.get('bouquet_id')
-        if not bouquet_id:
-            return jsonify({'message': 'Brak identyfikatora bukietu'}), 400
-
-        bouquet_id = data['bouquet_id']
-        bouquet = Bouquet.query.get(bouquet_id)
-
-        if not bouquet:
-            return jsonify({'message': 'Bukiet nie znaleziony'}), 404
-
-        # Sprawdzenie, czy bukiet już jest w koszyku
-        cart_item = Cart.query.filter_by(user_id=user.id, bouquet_id=bouquet_id).first()
-
-        if cart_item:
-            # Jeśli bukiet już jest w koszyku, zwiększamy ilość
-            cart_item.quantity += 1
-        else:
-            # Jeśli bukiet nie jest w koszyku, dodajemy go
-            cart_item = Cart(user_id=user.id, bouquet_id=bouquet_id)
-            db.session.add(cart_item)
-
-        db.session.commit()
-        return jsonify({'message': 'Bukiet dodany do koszyka', 'success': True}), 201
-
-    except Exception as e:
-        return jsonify({'message': 'Wystąpił błąd'}), 500
-
-# Pobieranie zawartośći koszyka
-@app.route('/cart', methods=['GET'])
-@token_required
-def get_cart(userinfo):
-    try:
-        current_user_email = userinfo.get('email')
-        if not current_user_email:
-            return jsonify({'message': 'Email nie znaleziony w tokenie'}), 400
-
-        user = Users.query.filter_by(email=current_user_email).first()
-        if not user:
-            return jsonify({'message': 'Użytkownik nie znaleziony'}), 404
-
-        # Pobranie wszystkich produktów w koszyku dla użytkownika
-        cart_items = Cart.query.filter_by(user_id=user.id).all()
-
-        cart_data = []
-        for item in cart_items:
-            bouquet = Bouquet.query.get(item.bouquet_id)
-            cart_data.append({
-                "bouquet_id": bouquet.id,
-                "bouquet_name": bouquet.name,
-                "bouquet_price": bouquet.price,
-                "bouquet_image": bouquet.image_url,
-                "quantity": item.quantity
-            })
-
-        return jsonify(cart_data), 200
-
-    except Exception as e:
-        return jsonify({'message': 'Wystąpił błąd'}), 500
-
-
-# Aktualizacji ilości elementów w koszyku
-@app.route('/cart/<int:cart_item_id>', methods=['PUT'])
-@token_required
-def update_cart(cart_item_id, userinfo):
-    try:
-        current_user_email = userinfo.get('email')
-        if not current_user_email:
-            return jsonify({'message': 'Błąd autoryzacji'}), 400
-
-        user = Users.query.filter_by(email=current_user_email).first()
-        if not user:
-            return jsonify({'message': 'Błąd autoryzacji'}), 404
-
-        # Pobranie pozycji w koszyku
-        cart_item = Cart.query.filter_by(bouquet_id=cart_item_id, user_id=user.id).first()
-        if not cart_item:
-            return jsonify({'message': 'Element nie istnieje'}), 404
-
-        # Zaktualizowanie ilości
-        data = request.json
-        new_quantity = data.get('quantity')
-        if new_quantity < 1:
-            return jsonify({'message': 'Nieprawidłowa ilość'}), 400
-
-        cart_item.quantity = new_quantity
-        db.session.commit()
-        return jsonify({'message': 'Ilość w koszyku zaktualizowana'}), 200
-
-    except Exception as e:
-        return jsonify({'message': 'Wystąpił błąd'}), 500
-
-
-# Usuwanie bukietu z koszyka
-@app.route('/cart/<int:cart_item_id>', methods=['DELETE'])
-@token_required
-def remove_from_cart(cart_item_id, userinfo):
-    try:
-        current_user_email = userinfo.get('email')
-        if not current_user_email:
-            return jsonify({'message': 'Email nie znaleziony w tokenie'}), 400
-
-        user = Users.query.filter_by(email=current_user_email).first()
-        if not user:
-            return jsonify({'message': 'Użytkownik nie znaleziony'}), 404
-
-        cart_item = Cart.query.filter_by(bouquet_id=cart_item_id, user_id=user.id).first()
-        if not cart_item:
-            return jsonify({'message': 'Item not found'}), 404
-
-        db.session.delete(cart_item)  # Usuwanie elementu
-        db.session.commit()
-        return jsonify({'message': 'Bukiet usunięty z koszyka'}), 200
-
-    except Exception as e:
-        return jsonify({'message': 'Wystąpił błąd'}), 500
-
 
 @app.route('/health')
 def health():
@@ -450,4 +300,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001) 
+    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=True) 

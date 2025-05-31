@@ -1,17 +1,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: backend-cart
   labels:
-    app: frontend
+    app: backend-cart
   annotations:
     prometheus.io/scrape: "true" # Określa, że Prometheus ma zbierać metryki z tej usługi
-    prometheus.io/port: "3001" # Określa port, z którego Prometheus ma pobierać metryki
+    prometheus.io/port: "5002" # Określa port, z którego Prometheus ma pobierać metryki
 spec:
   type: ClusterIP
   selector:
-    app: frontend
+    app: backend-cart
   ports:
     - name: http
-      port: 3001
-      targetPort: 80
+      port: 5002
+      targetPort: 5002

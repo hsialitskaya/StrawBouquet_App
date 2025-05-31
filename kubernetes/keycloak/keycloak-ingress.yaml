@@ -10,10 +10,10 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: "localhost"
+    - host: keycloak.local
       http:
         paths:
-          - path: /keycloak
+          - path: /
             pathType: Prefix
             backend:
               service:

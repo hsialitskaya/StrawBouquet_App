@@ -23,7 +23,7 @@ spec:
         - name: frontend
           image: annasel/frontend:latest
           ports:
-            - containerPort: 3001
+            - containerPort: 80
           envFrom:
             - configMapRef:
                 name: frontend-config
@@ -37,16 +37,19 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 3001
+              port: 80
               scheme: HTTP
-            initialDelaySeconds: 30
+            initialDelaySeconds: 50
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /
-              port: 3001
+              port: 80
               scheme: HTTP
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 5
+            timeoutSeconds: 3
             failureThreshold: 3
       restartPolicy: Always

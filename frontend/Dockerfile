@@ -1,46 +1,35 @@
-# Etap budowania
+# Etap 1: Budowanie aplikacji React
 FROM node:18 AS builder
 
 WORKDIR /app
 
-# Kopiowanie tylko plików package.json i package-lock.json
+# Kopiuj pliki zależności
 COPY package*.json ./
 
-# Instalacja zależności (w tym zależności deweloperskich)
-RUN npm install
+# Instalacja zależności
+RUN npm install --production=false
 
-# Kopiowanie reszty kodu i budowanie aplikacji
+# Kopiuj resztę kodu
 COPY . .
 
-# Etap deweloperski
-FROM node:18-alpine
+# Buduj aplikację (tworzy folder "build")
+RUN npm run build && rm -rf build/static/js/*.map build/static/css/*.map
 
-# Argument budowania z domyślną wartością
-ARG NODE_ENV=development
-ARG APP_PORT=3001
-# Ustawienie zmiennej środowiskowej
+
+# Etap 2: Serwowanie przez NGINX
+FROM nginx:alpine
+
+# Argument portu (opcjonalny)
+ARG APP_PORT=80
 ENV PORT=${APP_PORT}
 
-WORKDIR /app
+# Skopiuj niestandardową konfigurację nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Ustawienie zmiennej środowiskowej na development
-ENV NODE_ENV=${NODE_ENV}
+# Skopiuj zbudowaną aplikację do katalogu publicznego NGINX
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Instalacja serwera do serwowania statycznych plików
-RUN npm install -g serve
-
-# Kopiowanie package.json i node_modules z etapu budowania
-COPY --from=builder /app/package*.json /app/
-COPY --from=builder /app/node_modules /app/node_modules
-
-# Zainstaluj curl 
-RUN apk add --no-cache curl
-
-# Kopiowanie aplikacji (po zainstalowaniu zależności, aby uniknąć ponownej instalacji przy każdym wdrożeniu kodu)
-COPY . .
-
-# Serwowanie plików na porcie 3001
+# Wystaw port (jeśli używasz innego niż 80)
 EXPOSE ${PORT}
 
-# Uruchamianie aplikacji w trybie deweloperskim (z hot-reloading)
-CMD ["npm", "start"]
+# NGINX uruchamia się automatycznie przez ENTRYPOINT

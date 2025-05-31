@@ -1,7 +1,39 @@
 import axios from "axios";
 import keycloak from "./keycloak";
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:5001";
+
+
+// Instancja dla serwisu produktów
+const productApi = axios.create({
+  baseURL: "http://localhost:5001",
+  withCredentials: true,
+});
+
+// Instancja dla serwisu koszyka
+const cartApi = axios.create({
+  baseURL: "http://localhost:5002",
+  withCredentials: true,
+});
+
+// Interceptor do obu instancji
+const addAuthInterceptor = (instance) => {
+  instance.interceptors.request.use(async (config) => {
+    if (keycloak.token) {
+      try {
+        await keycloak.updateToken(30);
+        config.headers.Authorization = `Bearer ${keycloak.token}`;
+      } catch (error) {
+        console.error("Failed to refresh token:", error);
+        keycloak.logout();
+      }
+    }
+    return config;
+  });
+};
+
+
+
+addAuthInterceptor(productApi);
+addAuthInterceptor(cartApi);
 
 axios.interceptors.request.use(async (config) => {
   if (keycloak.token) {
@@ -18,7 +50,7 @@ axios.interceptors.request.use(async (config) => {
 
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post("/register", {
+    const response = await cartApi.post("/register", {
       email: userData.email,
       nickname: userData.preferred_username,
     });
@@ -31,7 +63,7 @@ export const registerUser = async (userData) => {
 
 export const fetchBouquets = async () => {
   try {
-    const response = await axios.get("/bouquets");
+    const response = await productApi.get("/bouquets");
     return response.data;
   } catch (error) {
     const errorMessage =
@@ -49,11 +81,7 @@ export const addBouquet = async (name, price, image) => {
   formData.append("image", image);
 
   try {
-    const response = await axios.post("/add_bouquet", formData, {
-      headers: {
-        Authorization: `Bearer ${keycloak.token}`,
-      },
-    });
+    const response = await productApi.post("/add_bouquet", formData);
     return response.data;
   } catch (error) {
     console.error("Błąd podczas dodawania bukietu do bazy:", error);
@@ -69,11 +97,7 @@ export const addBouquet = async (name, price, image) => {
 
 export const deleteBouquet = async (bouquetId) => {
   try {
-    const response = await axios.delete(`/bouquet/${bouquetId}`, {
-      headers: {
-        Authorization: `Bearer ${keycloak.token}`,
-      },
-    });
+    const response = await productApi.delete(`/bouquet/${bouquetId}`);
     return response.data;
   } catch (error) {
     console.error("Błąd usuwania bukietu z bazy:", error);
@@ -105,15 +129,9 @@ export const deleteBouquet = async (bouquetId) => {
 
 export const addToCart = async (bouquetId) => {
   try {
-    const response = await axios.post(
+    const response = await cartApi.post(
       "/cart",
-      { bouquet_id: bouquetId },
-      {
-        headers: {
-          Authorization: `Bearer ${keycloak.token}`,
-        },
-      }
-    );
+      { bouquet_id: bouquetId });
     return response.data;
   } catch (error) {
     console.error("Błąd dodawania do koszyka:", error);
@@ -141,11 +159,7 @@ export const addToCart = async (bouquetId) => {
 
 export const fetchCart = async () => {
   try {
-    const response = await axios.get("/cart", {
-      headers: {
-        Authorization: `Bearer ${keycloak.token}`,
-      },
-    });
+    const response = await cartApi.get("/cart");
     return response.data;
   } catch (error) {
     console.error("Błąd pobierania koszyka:", error);
@@ -173,15 +187,9 @@ export const updateQuantity = async (cartItemId, newQuantity) => {
   if (newQuantity < 1) return;
 
   try {
-    await axios.put(
+    await cartApi.put(
       `/cart/${cartItemId}`,
-      { quantity: newQuantity },
-      {
-        headers: {
-          Authorization: `Bearer ${keycloak.token}`,
-        },
-      }
-    );
+      { quantity: newQuantity });
   } catch (error) {
     console.error("Błąd aktualizacji ilości:", error);
 
@@ -208,11 +216,7 @@ export const updateQuantity = async (cartItemId, newQuantity) => {
 
 export const removeFromCart = async (cartItemId) => {
   try {
-    await axios.delete(`/cart/${cartItemId}`, {
-      headers: {
-        Authorization: `Bearer ${keycloak.token}`,
-      },
-    });
+    await cartApi.delete(`/cart/${cartItemId}`);
   } catch (error) {
     console.error("Błąd usuwania z koszyka:", error);
     if (error.response) {

@@ -26,10 +26,11 @@ spec:
             - containerPort: 8080
           args:
             - start-dev
-            - --import-realm
           env:
             - name: KC_HEALTH_ENABLED
               value: "true"
+            - name: KC_DB
+              value: dev-file
             - name: KC_HOSTNAME
               valueFrom:
                 configMapKeyRef:
@@ -48,10 +49,22 @@ spec:
           livenessProbe:
             exec:
               command:
-                - "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;if [ $? -eq 0 ]; then echo 'Healthcheck Successful';exit 0;else echo 'Healthcheck Failed';exit 1;fi;"
+                - sh
+                - -c
+                - |
+                  exec 3<>/dev/tcp/127.0.0.1/8080; \
+                  echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3; \
+                  if [ $? -eq 0 ]; then \
+                    echo 'Healthcheck Successful'; \
+                    exit 0; \
+                  else \
+                    echo 'Healthcheck Failed'; \
+                    exit 1; \
+                  fi
+            initialDelaySeconds: 40
+            timeoutSeconds: 10
+            periodSeconds: 30
             failureThreshold: 3
-            periodSeconds: 60
-            timeoutSeconds: 20
           volumeMounts:
             - name: keycloak-data
               mountPath: /opt/keycloak/data
