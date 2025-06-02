@@ -1,4 +1,4 @@
-# 🍓 StrawBouquet 🍓
+# 🍓💐 StrawBouquet 💐🍓
 
 StrawBouquet App is an elegant and user-friendly website that allows users to browse and purchase beautifully crafted strawberry bouquets. Designed to provide a unique gifting experience, the app showcases a wide variety of strawberry arrangements, each made with care and creativity. Users can explore detailed product pages, view high-quality photos, and select bouquet sizes. The platform also features a favorites list, enabling users to save their preferred bouquets for quick access. The goal of StrawBouquet App is to make gifting sweet, memorable, and visually delightful through the charm of strawberry bouquets.  
 
