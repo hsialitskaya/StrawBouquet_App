@@ -33,7 +33,7 @@ To get started with the StrawBouquet App, follow these steps:
 
 Download the repository to your local machine by running the following command in your terminal:    
 ```bash
-git clone https://github.com/hsialitskaya/StrawBouquet.git StrawBouquet
+git clone https://github.com/hsialitskaya/StrawBouquet_App.git StrawBouquet
 ```  
 
 # ⚒️ Docker Compose Setup    
