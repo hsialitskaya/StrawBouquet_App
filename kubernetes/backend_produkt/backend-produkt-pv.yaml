@@ -11,4 +11,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /Users/annaselitskaya/Desktop/tw_app/backend/uploads
+    path: ../../backend/uploads

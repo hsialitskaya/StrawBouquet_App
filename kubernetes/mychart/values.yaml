@@ -148,7 +148,7 @@ backend:
   ingress:
     host: localhost
   pv:
-    hostPath: "/Users/annaselitskaya/Desktop/tw_app/backend/uploads"
+    hostPath: "../backend/uploads"
 
 frontend:
   replicaCount: 3
@@ -186,7 +186,7 @@ keycloak:
     path: /keycloak
   storage:
     size: 1Gi
-    hostPath: "/Users/annaselitskaya/Desktop/tw_app/keycloak_data"
+    hostPath: "../keycloak_data"
   admin:
     user: "admin"
     password: "admin"
@@ -200,7 +200,7 @@ postgres:
   password: "haslo"
   storage:
     size: 1Gi
-    hostPath: "/Users/annaselitskaya/Desktop/tw_app/postgres_data"
+    hostPath: "../postgres_data"
   service:
     port: "5432"
 
@@ -211,7 +211,7 @@ redis:
   replicas: 2
   storage:
     size: 1Gi
-    hostPath: "/Users/annaselitskaya/Desktop/tw_app/redis_data"
+    hostPath: "../redis_data"
   service:
     port: "6379"
   securityContext:

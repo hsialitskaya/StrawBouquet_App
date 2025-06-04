@@ -11,4 +11,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /Users/annaselitskaya/Desktop/tw_app/keycloak_data
+    path: ../../keycloak_data

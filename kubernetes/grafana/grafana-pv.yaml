@@ -9,4 +9,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /Users/annaselitskaya/Desktop/tw_app/grafana/data
+    path: ../../grafana/data

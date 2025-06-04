@@ -11,4 +11,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /Users/annaselitskaya/Desktop/tw_app/postgres_data
+    path: ../../postgres_data
