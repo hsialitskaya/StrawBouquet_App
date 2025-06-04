@@ -1,5 +1,6 @@
 keycloak_data/
 postgres_data/
 secrets/
+grafana/
 
 .DS_Store
