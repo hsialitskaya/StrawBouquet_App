@@ -16,3 +16,8 @@ __pycache__/
 # Inne pliki tymczasowe
 *.log
 *.tmp
+
+
+__init__.py
+product_service/__init__.py
+cart_service/__init__.py
