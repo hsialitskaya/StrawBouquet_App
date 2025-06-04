@@ -13,7 +13,6 @@ from functools import wraps
 import redis
 import json
 import requests
-import logging
 
 
 app = Flask(__name__)
@@ -77,8 +76,11 @@ def token_required(f):
         token = token.split(" ")[1]
 
         try:
-            # Zdekoduj token i sprawdź
-            token_info = keycloak_openid.decode_token(token)
+            # Introspekcja tokena — zapytanie do Keycloak
+            token_info = keycloak_openid.introspect(token)
+
+            if not token_info.get("active"):
+                return jsonify({"error": "Token is inactive or expired"}), 403
 
             client_id = token_info.get('azp')
             if client_id != "myclient":
@@ -172,8 +174,6 @@ def add_to_cart(userinfo):
         return jsonify({'message': 'Wystąpił błąd'}), 500
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 # Pobieranie zawartośći koszyka
 @app.route('/cart', methods=['GET'])
 @token_required
@@ -181,33 +181,25 @@ def get_cart(userinfo):
     try:
         current_user_email = userinfo.get('email')
         if not current_user_email:
-            logger.warning("Email nie znaleziony w tokenie")
             return jsonify({'message': 'Email nie znaleziony w tokenie'}), 400
-
-        logger.info(f"Pobieranie koszyka dla użytkownika: {current_user_email}")
 
         user = Users.query.filter_by(email=current_user_email).first()
         if not user:
-            logger.warning(f"Użytkownik z emailem {current_user_email} nie znaleziony")
             return jsonify({'message': 'Użytkownik nie znaleziony'}), 404
 
         cart_items = Cart.query.filter_by(user_id=user.id).all()
-        logger.info(f"Znaleziono {len(cart_items)} produktów w koszyku użytkownika {user.id}")
 
         cart_data = []
         for item in cart_items:
             if not item.bouquet_id:
-                logger.warning(f"Brak bouquet_id w itemie ID: {item.id}")
                 continue
 
             product_service_url = f"{current_app.config['PRODUCT_SERVICE_URL']}/bouquet/{item.bouquet_id}"
             try:
-                logger.debug(f"Pobieranie danych bukietu z: {product_service_url}")
                 resp = requests.get(product_service_url, timeout=3)
                 resp.raise_for_status()
                 bouquet = resp.json()
 
-                logger.info(f"Załadowano dane bukietu ID: {bouquet.get('id')}")
 
                 cart_data.append({
                     "bouquet_id": bouquet.get('id'),
@@ -218,14 +210,11 @@ def get_cart(userinfo):
                 })
 
             except requests.exceptions.RequestException as req_err:
-                logger.error(f"Błąd pobierania bukietu {item.bouquet_id}: {req_err}")
                 continue
 
-        logger.info(f"Zwrócono koszyk z {len(cart_data)} produktami")
         return jsonify(cart_data), 200
 
     except Exception as e:
-        logger.exception("Wystąpił błąd podczas pobierania koszyka")
         return jsonify({'message': 'Wystąpił błąd'}), 500
 
 

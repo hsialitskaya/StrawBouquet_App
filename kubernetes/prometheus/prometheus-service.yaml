@@ -5,7 +5,7 @@ metadata:
   annotations:
     prometheus.io/scrape: "true"
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: prometheus
   ports:

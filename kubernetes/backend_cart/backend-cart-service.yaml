@@ -8,7 +8,7 @@ metadata:
     prometheus.io/scrape: "true" # Określa, że Prometheus ma zbierać metryki z tej usługi
     prometheus.io/port: "5002" # Określa port, z którego Prometheus ma pobierać metryki
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: backend-cart
   ports:

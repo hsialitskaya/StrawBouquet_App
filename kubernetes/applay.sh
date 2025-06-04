@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# minikube start
+
 # Wdrożenia
 # Prometheus
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -18,13 +20,9 @@ kubectl apply -f postgres/
 kubectl apply -f prometheus/
 kubectl apply -f redis/
 
-# echo "Czekam na gotowość podów..."
 
-# Czekaj na gotowość podów backend i frontend
-# sleep 30
-# echo "Wszystkie deploymenty gotowe, uruchamiam port-forward..."
 
-# Uruchom port-forward w tle 
+# Port-forward w tle 
 # kubectl port-forward svc/backend-produkt 5001:5001 &
 # kubectl port-forward svc/backend-cart 5002:5002 &
 # kubectl port-forward svc/frontend 3001:80 &
@@ -33,22 +31,14 @@ kubectl apply -f redis/
 # kubectl port-forward svc/prometheus-operator-kube-p-prometheus 9090:9090 -n monitoring &
 
 
-# kubectl port-forward svc/postgres 5432:5432 &
-# kubectl port-forward svc/redis 6379:6379 &
-
-
-# echo "Port-forwardy uruchomione"
-# wait
-    
-
 
 # Poprawność działania 
 
-# Ingress - Nginx
-# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
-# kubectl get ingress
-# kubectl get pods -n ingress-nginx
-
+# Minikube
+# minikube status
+# kubectl get pods
+# kubectl get svc
+# minikube tunnel
 
 # Grafana
 # prom-operator
@@ -61,6 +51,6 @@ kubectl apply -f redis/
 
 
 # Helm
-# helm install myapp ./mychart (LUB POKAZAC ZRZUT)
+# helm install myapp ./mychart
 # helm list
 # helm status myapp

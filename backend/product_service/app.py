@@ -79,8 +79,11 @@ def token_required(f):
         token = token.split(" ")[1]
 
         try:
-            # Zdekoduj token i sprawdź
-            token_info = keycloak_openid.decode_token(token)
+            # Introspekcja tokena — zapytanie do Keycloak
+            token_info = keycloak_openid.introspect(token)
+
+            if not token_info.get("active"):
+                return jsonify({"error": "Token is inactive or expired"}), 403
 
             client_id = token_info.get('azp')
             if client_id != "myclient":

@@ -17,7 +17,6 @@ FROM python:3.10-alpine
 RUN mkdir -p /app/cart_service
 WORKDIR /app/cart_service
 
-
 RUN apk add --no-cache curl 
 
 # Skopiuj zainstalowane pakiety z buildera
