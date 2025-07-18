@@ -2,9 +2,9 @@
 
 StrawBouquet App is an elegant and user-friendly website that allows users to browse and purchase beautifully crafted strawberry bouquets. Designed to provide a unique gifting experience, the app showcases a wide variety of strawberry arrangements, each made with care and creativity. Users can explore detailed product pages, view high-quality photos, and select bouquet sizes. The platform also features a favorites list, enabling users to save their preferred bouquets for quick access. The goal of StrawBouquet App is to make gifting sweet, memorable, and visually delightful through the charm of strawberry bouquets.  
 
-<img width="1431" alt="Pokémons Explorer" src="https://github.com/user-attachments/assets/55ad339a-ab8b-4f46-be38-f4afb9930d90" />
-<img width="1418" alt="Pokémons Explorer" src="https://github.com/user-attachments/assets/60d2ec68-4c7e-4b67-ae97-1fc14aeefa82" />
-<img width="1416" alt="Pokémons Explorer" src="https://github.com/user-attachments/assets/1b450756-b666-40fe-9fc9-2ce49c811f57" />
+<img width="1431" alt="StrawBouquet" src="https://github.com/user-attachments/assets/55ad339a-ab8b-4f46-be38-f4afb9930d90" /> 
+<img width="1418" alt="StrawBouquet" src="https://github.com/user-attachments/assets/60d2ec68-4c7e-4b67-ae97-1fc14aeefa82" /> 
+<img width="1416" alt="StrawBouquet" src="https://github.com/user-attachments/assets/1b450756-b666-40fe-9fc9-2ce49c811f57" /> 
 
 
 # 💻 Technologies Used   
